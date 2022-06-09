@@ -1,29 +1,56 @@
-# For more information: https://laravel.com/docs/sail
-version: '3'
 services:
-    laravel.test:
+#    laravel.test:
+#        build:
+#            context: ./vendor/laravel/sail/runtimes/8.1
+#            dockerfile: Dockerfile
+#            args:
+#                WWWGROUP: '${WWWGROUP}'
+#        image: sail-8.1/app
+#        extra_hosts:
+#            - 'host.docker.internal:host-gateway'
+#        ports:
+#            - '${APP_PORT:-80}:80'
+#            - '${HMR_PORT:-8080}:8080'
+#        environment:
+#            WWWUSER: '${WWWUSER}'
+#            LARAVEL_SAIL: 1
+#            XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
+#            XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
+#        volumes:
+#            - '.:/var/www/html'
+#        networks:
+#            - sail
+#        depends_on:
+#            - mariadb
+    laravel-webauthn-login:
         build:
-            context: ./vendor/laravel/sail/runtimes/8.1
-            dockerfile: Dockerfile
-            args:
-                WWWGROUP: '${WWWGROUP}'
-        image: sail-8.1/app
-        extra_hosts:
-            - 'host.docker.internal:host-gateway'
-        ports:
-            - '${APP_PORT:-80}:80'
-            - '${HMR_PORT:-8080}:8080'
-        environment:
-            WWWUSER: '${WWWUSER}'
-            LARAVEL_SAIL: 1
-            XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
-            XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
+            context: .
+        container_name: laravel-webauthn-login
+        image: laravel-webauthn-login/app
+        restart: unless-stopped
+        tty: true
+        working_dir: /var/www/html
         volumes:
-            - '.:/var/www/html'
+            - .:/var/www/html
         networks:
             - sail
         depends_on:
             - mariadb
+    nginx:
+        image: nginx:latest
+        restart: unless-stopped
+        tty: true
+        ports:
+            - 80:80
+            - 443:443
+        volumes:
+            - ./:/var/www/html
+            - ./build/nginx/conf:/etc/nginx/conf.d
+            - ./build/nginx/certs/:/etc/nginx/ssl
+        networks:
+            - sail
+        depends_on:
+            - laravel-webauthn-login
     mariadb:
         image: 'mariadb:10'
         ports:
